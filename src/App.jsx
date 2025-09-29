@@ -31,14 +31,26 @@ function App() {
     526, 556, 586, 616, 646, 676, 706, 705
   ];
 
-  // Scene toggle
+  // ✅ States
   const [sceneIndex, setSceneIndex] = useState(1);
+  const [trueRed, setTrueRed] = useState(true);
+  const [trueGreen, setTrueGreen] = useState(false);
+  const [blinkOn, setBlinkOn] = useState(false);
 
+  // Red/Green toggle
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTrueRed(prev => !prev);
+      setTrueGreen(prev => !prev);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Scene toggle (green animation)
   useEffect(() => {
     const interval = setInterval(() => {
       setSceneIndex(prev => (prev === 1 ? 2 : 1));
-    }, 500); // scene changes every 0.5s
-
+    }, 500);
     return () => clearInterval(interval);
   }, []);
 
@@ -47,62 +59,59 @@ function App() {
       ? mainGreenBars.concat(animation1)
       : mainGreenBars.concat(animation2);
 
-  // Red/green toggle
-  const [trueRed, setTrueRed] = useState(true);
-  const [trueGreen, setTrueGreen] = useState(false);
-  const [blinkOn, setBlinkOn] = useState(false);
-
+  // ✅ Blinking cycle (red)
   useEffect(() => {
-    // main red/green toggle
-    const interval = setInterval(() => {
-      setTrueRed(prev => !prev);
-      setTrueGreen(prev => !prev);
-    }, 10000);
-
-    // blinking effect
-    const interval2 = setInterval(() => {
-      // turn blink on at 8s
+    function startBlinkCycle() {
       const onTimeout = setTimeout(() => {
         setBlinkOn(true);
-        console.log(blinkOn);
       }, 7000);
 
-      // turn blink off again at 9s
       const offTimeout = setTimeout(() => {
         setBlinkOn(false);
-        console.log(blinkOn);
       }, 9999);
 
-      // cleanup both
       return () => {
         clearTimeout(onTimeout);
         clearTimeout(offTimeout);
       };
+    }
+
+    // run immediately
+    let cleanup = startBlinkCycle();
+
+    // repeat every 10s
+    const interval = setInterval(() => {
+      cleanup = startBlinkCycle();
     }, 10000);
 
-    // cleanup intervals
     return () => {
       clearInterval(interval);
-      clearInterval(interval2);
+      cleanup?.();
     };
   }, []);
-  // Adjust chosenBars values without mutating original
+
   const adjustedChosenBars = chosenBars.map(bar => bar + 90);
 
   return (
-    <div className='app'>
+    <div className="app">
       <div className="container">
-        <ul className='traffic-red'>
+        <ul className="traffic-red">
           {lis.map((_, index) => {
             let className = "normal-bar";
             if (!trueRed) className = "not-active";
             else if (adjustedChosenBars.includes(index + 1)) className = "chosen-bar";
 
-            return <li style={{animationName: blinkOn ? "blinkRed" : ""}} key={index} className={className} />;
+            return (
+              <li
+                style={{ animationName: blinkOn ? "blinkRed" : "" }}
+                key={index}
+                className={className}
+              />
+            );
           })}
         </ul>
 
-        <ul className='traffic-green'>
+        <ul className="traffic-green">
           {lis.map((_, index) => {
             let className = "normal-green-bar";
             if (!trueGreen) className = "not-active";
